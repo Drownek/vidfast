@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: vidfast
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: TMDB_API_KEY
+        sync: false
+      - key: PORT
+        value: 3000
