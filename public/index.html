@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VidFast Stream</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1868,11 +1869,8 @@
                     document.getElementById('m3u8Link').textContent = data.m3u8Url;
                     document.getElementById('playerContainer').classList.add('active');
                     
-                    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-                    // Use proxy on mobile to avoid CORS, direct on PC
-                    const streamUrl = isMobile 
-                        ? '/api/proxy?url=' + encodeURIComponent(data.m3u8Url)
-                        : data.m3u8Url;
+                    // Always use proxy to avoid CORS issues
+                    const streamUrl = '/api/proxy?url=' + encodeURIComponent(data.m3u8Url);
                     
                     // Destroy previous HLS
                     if (hls) {
