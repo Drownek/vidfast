@@ -1,0 +1,31 @@
+{
+  "name": "vidfast",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "build": "esbuild src/player.js --bundle --outfile=public/player.bundle.js --format=iife --global-name=VidstackHelper --loader:.css=css --minify",
+    "start": "npm run build && node server.js",
+    "dev": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "playwright": "^1.57.0",
+    "playwright-extra": "^4.3.6",
+    "puppeteer": "^24.34.0",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "vidstack": "^1.12.13",
+    "wyzie-lib": "^2.2.6"
+  },
+  "devDependencies": {
+    "esbuild": "^0.27.2"
+  }
+}

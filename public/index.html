@@ -1,0 +1,1974 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VidFast Stream</title>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0f0f1a;
+            --bg-secondary: #1a1a2e;
+            --bg-card: #1e1e35;
+            --bg-hover: #252545;
+            --accent: #6366f1;
+            --accent-hover: #818cf8;
+            --accent-glow: rgba(99, 102, 241, 0.3);
+            --text-primary: #f1f1f1;
+            --text-secondary: #a1a1aa;
+            --text-muted: #71717a;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --border: rgba(255,255,255,0.08);
+            --shadow: 0 4px 24px rgba(0,0,0,0.4);
+            --radius: 12px;
+            --radius-sm: 8px;
+            --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+        
+        /* Header */
+        .header {
+            background: linear-gradient(180deg, var(--bg-secondary) 0%, transparent 100%);
+            padding: 16px 24px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(12px);
+        }
+        .header-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .search-input {
+            flex: 1;
+            padding: 12px 20px;
+            font-size: 15px;
+            font-family: inherit;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            color: var(--text-primary);
+            outline: none;
+        }
+        .search-input::placeholder { color: var(--text-muted); }
+        .search-input:focus { border-color: var(--accent); }
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .profile-btn, .logout-btn {
+            display: flex;
+            align-items: center;
+            height: 40px;
+            padding: 0 16px;
+            border: none;
+            border-radius: 24px;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .profile-btn {
+            gap: 8px;
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+        }
+        .profile-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3); }
+        .profile-btn .profile-icon { width: 22px; height: 22px; border-radius: 4px; }
+        .profile-btn .external-icon { width: 14px; height: 14px; opacity: 0.8; flex-shrink: 0; }
+        .logout-btn {
+            gap: 6px;
+            background: linear-gradient(135deg, var(--accent) 0%, #7c3aed 100%);
+        }
+        .logout-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px var(--accent-glow); }
+        .logout-btn svg { width: 16px; height: 16px; }
+        
+        /* Container */
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 24px 40px; }
+        input, select {
+            padding: 14px 18px;
+            font-size: 15px;
+            font-family: inherit;
+            border: none;
+            border-radius: var(--radius);
+            background: transparent;
+            color: var(--text-primary);
+            outline: none;
+            transition: var(--transition);
+        }
+        input::placeholder { color: var(--text-muted); }
+        select { background: var(--bg-hover); cursor: pointer; }
+        select:hover { background: var(--bg-secondary); }
+        #searchInput { flex: 1; min-width: 0; }
+        
+        /* Buttons */
+        button:not(.profile-card), .btn {
+            padding: 14px 28px;
+            font-size: 15px;
+            font-weight: 600;
+            font-family: inherit;
+            background: linear-gradient(135deg, var(--accent) 0%, #7c3aed 100%);
+            color: #fff;
+            border: none;
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: var(--transition);
+            white-space: nowrap;
+        }
+        button:not(.profile-card):hover, .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 24px var(--accent-glow);
+        }
+        button:not(.profile-card):active, .btn:active { transform: translateY(0); }
+        button:not(.profile-card):disabled { background: var(--bg-hover); cursor: not-allowed; opacity: 0.6; transform: none; box-shadow: none; }
+        
+        .btn-secondary {
+            background: var(--bg-hover);
+            border: 1px solid var(--border);
+        }
+        .btn-secondary:hover {
+            background: var(--bg-secondary);
+            box-shadow: none;
+        }
+        .btn-sm { padding: 10px 16px; font-size: 13px; }
+        .btn-icon {
+            padding: 10px;
+            background: var(--bg-hover);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-icon:hover { background: var(--bg-secondary); box-shadow: none; }
+        
+        /* Section titles */
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin: 32px 0 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: var(--accent);
+            border-radius: 2px;
+        }
+        
+        /* Results grid */
+        .results {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 20px;
+        }
+        .result-item {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            overflow: hidden;
+            cursor: pointer;
+            transition: var(--transition);
+            border: 1px solid var(--border);
+            position: relative;
+        }
+        .result-item:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 32px rgba(0,0,0,0.5);
+            border-color: var(--accent);
+        }
+        .result-item .poster-wrap {
+            position: relative;
+            aspect-ratio: 2/3;
+            overflow: hidden;
+        }
+        .result-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: var(--transition);
+        }
+        .result-item:hover img { transform: scale(1.05); }
+        .result-item .info { padding: 12px; }
+        .result-item .title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .result-item .meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .result-item .type {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            background: var(--accent);
+            color: #fff;
+            padding: 4px 8px;
+            border-radius: 6px;
+            position: absolute;
+            top: 8px;
+            left: 8px;
+        }
+        .no-poster {
+            width: 100%;
+            aspect-ratio: 2/3;
+            background: var(--bg-hover);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+        
+
+        
+        /* Status */
+        #status {
+            text-align: center;
+            padding: 16px;
+            font-size: 15px;
+            color: var(--warning);
+            display: none;
+        }
+        #status.active { display: block; }
+        #status.error { color: var(--error); }
+        
+        /* Loading spinner */
+        .loading {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Player container */
+        .player-container { display: none; margin-bottom: 24px; }
+        .player-container.active { display: block; animation: slideDown 0.3s ease; }
+        
+        /* Now playing header */
+        .now-playing-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .now-playing-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .now-playing-info .badge {
+            background: var(--success);
+            color: #fff;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .now-playing-info .title-text {
+            font-size: 16px;
+            font-weight: 600;
+        }
+        .episode-nav {
+            display: none;
+            align-items: center;
+            gap: 4px;
+        }
+        .episode-nav.active { display: flex; }
+        .episode-nav .nav-select {
+            padding: 6px 10px;
+            font-size: 13px;
+            font-family: inherit;
+            background: var(--bg-hover);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            cursor: pointer;
+        }
+        .episode-nav .nav-select:hover {
+            border-color: var(--accent);
+        }
+        .episode-nav .nav-btn {
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            font-size: 18px;
+            font-weight: 400;
+            line-height: 1;
+            background: var(--bg-hover);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .episode-nav .nav-btn:hover:not(:disabled) {
+            background: var(--bg-secondary);
+            border-color: var(--accent);
+        }
+        .episode-nav .nav-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+        
+        /* Video wrapper */
+        .video-wrapper {
+            position: relative;
+            width: 100%;
+            background: #000;
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+        }
+        #videoPlayer {
+            width: 100%;
+            display: block;
+            aspect-ratio: 16/9;
+            background: #000;
+        }
+        #controlsGlow {
+            position: absolute;
+            left: 0; right: 0; bottom: 0;
+            height: 120px;
+            pointer-events: none;
+            background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.7) 100%);
+            z-index: 5;
+        }
+        #subtitleOverlay {
+            position: absolute;
+            bottom: 70px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            pointer-events: none;
+            padding: 0 20px;
+            z-index: 10;
+        }
+        #subtitleText {
+            display: inline-block;
+            background: rgba(0, 0, 0, 0.9);
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: var(--radius-sm);
+            font-size: 18px;
+            line-height: 1.5;
+            max-width: 80%;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+        #subtitleText:empty { display: none; }
+        
+
+        
+        /* Player controls area */
+        .player-controls-area {
+            margin-top: 16px;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .subtitle-controls {
+            display: none;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            min-width: 200px;
+            background: var(--bg-card);
+            padding: 12px 16px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+        }
+        .subtitle-controls.active { display: flex; }
+        .subtitle-controls span { font-size: 13px; color: var(--text-secondary); white-space: nowrap; }
+        .subtitle-controls input[type="range"] {
+            flex: 1;
+            accent-color: var(--accent);
+            height: 4px;
+        }
+        .subtitle-controls .value {
+            min-width: 60px;
+            text-align: right;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .subtitle-language {
+            display: none;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            min-width: 200px;
+            background: var(--bg-card);
+            padding: 12px 16px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+        }
+        .subtitle-language.active { display: flex; }
+        .subtitle-language span { font-size: 13px; color: var(--text-secondary); white-space: nowrap; }
+        .subtitle-language select {
+            flex: 1;
+            background: var(--bg-hover);
+            border: 1px solid var(--border);
+            padding: 10px 12px;
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+        }
+        
+        #m3u8Link {
+            display: none;
+            margin-top: 12px;
+            padding: 12px;
+            background: var(--bg-card);
+            border-radius: var(--radius-sm);
+            word-break: break-all;
+            font-size: 11px;
+            color: var(--text-muted);
+            font-family: monospace;
+        }
+        
+        /* Recent section */
+        .recent-section { display: none; margin-bottom: 8px; }
+        .recent-section.active { display: block; }
+        .recent-items {
+            display: flex;
+            gap: 16px;
+            overflow-x: auto;
+            padding: 4px 0 12px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--bg-hover) transparent;
+        }
+        .recent-items::-webkit-scrollbar { height: 6px; }
+        .recent-items::-webkit-scrollbar-track { background: transparent; }
+        .recent-items::-webkit-scrollbar-thumb { background: var(--bg-hover); border-radius: 3px; }
+        .recent-item {
+            position: relative;
+            flex-shrink: 0;
+            width: 120px;
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            overflow: visible;
+            cursor: pointer;
+            transition: var(--transition);
+            border: 1px solid var(--border);
+        }
+        .recent-item .remove-btn {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            width: 20px;
+            height: 20px;
+            background: #ef4444;
+            border: 2px solid var(--bg-primary);
+            border-radius: 50%;
+            color: #fff;
+            font-size: 12px;
+            cursor: pointer;
+            opacity: 0;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+        .recent-item:hover .remove-btn { opacity: 1; }
+        .recent-item .remove-btn:hover { background: #dc2626; transform: scale(1.1); }
+        .recent-item:hover {
+            transform: translateY(-2px);
+            border-color: var(--accent);
+        }
+        .recent-item .poster-wrap {
+            position: relative;
+            aspect-ratio: 2/3;
+            overflow: hidden;
+            border-radius: var(--radius) var(--radius) 0 0;
+        }
+        .recent-item img { width: 100%; height: 100%; object-fit: cover; }
+        .recent-item .progress-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: rgba(0,0,0,0.5);
+        }
+        .recent-item .progress-bar span {
+            display: block;
+            height: 100%;
+            background: var(--accent);
+        }
+        .recent-item .info { padding: 10px; }
+        .recent-item .title {
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .recent-item .ep {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+        .recent-item .resume {
+            font-size: 10px;
+            color: var(--accent);
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .recent-item .resume svg { width: 12px; height: 12px; }
+        
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+        }
+        .empty-state svg {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+        .empty-state p { font-size: 15px; }
+        
+        /* Mobile */
+        @media (max-width: 768px) {
+            .header { padding: 12px 16px; }
+            .header-inner { flex-wrap: wrap; }
+            .search-input { min-width: 200px; }
+            .profile-btn .profile-name { display: none; }
+            .logout-btn span { display: none; }
+            .container { padding: 0 16px 32px; }
+            .profile-gate-panel { padding: 24px; }
+            .profile-gate-panel h1 { font-size: 24px; }
+            .profile-card .profile-avatar { width: 100px; height: 100px; }
+
+            .results { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; }
+            .result-item .info { padding: 10px; }
+            .result-item .title { font-size: 13px; }
+            #subtitleOverlay { bottom: 60px; }
+            #subtitleText { font-size: 14px; padding: 8px 14px; max-width: 90%; }
+            .now-playing-header { flex-direction: column; align-items: flex-start; }
+            .player-controls-area { flex-direction: column; }
+        }
+
+        /* Profile gate */
+        .profile-gate {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.12), transparent 35%),
+                        radial-gradient(circle at 80% 30%, rgba(168, 85, 247, 0.12), transparent 38%),
+                        #0b0c12;
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 32px 16px;
+            z-index: 1000;
+        }
+        .profile-gate.hidden { display: none; }
+        .profile-gate-panel {
+            width: min(920px, 100%);
+            background: linear-gradient(180deg, rgba(26, 26, 46, 0.96) 0%, rgba(15, 15, 26, 0.98) 100%);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            box-shadow: 0 16px 60px rgba(0, 0, 0, 0.55);
+            padding: 32px;
+            text-align: center;
+        }
+        .profile-gate-panel h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .profile-subtext { color: var(--text-muted); margin-bottom: 20px; }
+        .profile-gate-actions {
+            margin-top: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .profile-gate-actions .auth-hint {
+            font-size: 12px;
+            color: var(--text-muted);
+            max-width: 420px;
+        }
+        .auth-form {
+            display: none;
+            flex-direction: column;
+            gap: 12px;
+            max-width: 320px;
+            margin: 0 auto 20px;
+        }
+        .auth-form.active { display: flex; }
+        .auth-form input {
+            background: var(--bg-hover);
+            border: 1px solid var(--border);
+            padding: 14px 18px;
+            border-radius: var(--radius);
+            width: 100%;
+        }
+        .auth-form input:focus {
+            border-color: var(--accent);
+            outline: none;
+        }
+        .auth-form .auth-error {
+            color: var(--error);
+            font-size: 13px;
+            text-align: center;
+        }
+        .auth-tabs {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+        .auth-tabs button {
+            padding: 8px 16px;
+            font-size: 13px;
+            background: var(--bg-hover);
+            border: 1px solid var(--border);
+        }
+        .auth-tabs button.active {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+        .logged-in-info {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+        .logged-in-info .email { color: var(--text-secondary); font-weight: 500; }
+        .profile-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 24px; justify-items: center; }
+        .profile-card {
+            all: unset;
+            position: relative;
+            width: 150px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+            cursor: pointer;
+        }
+        .profile-card:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 4px;
+            border-radius: 12px;
+        }
+        .profile-card .profile-avatar {
+            width: 150px;
+            height: 150px;
+            border-radius: 12px;
+            overflow: hidden;
+            background: var(--profile-color, #3b82f6);
+            border: 6px solid #1f1f1f;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+            transition: all 0.3s ease;
+        }
+        .profile-card .profile-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: var(--profile-filter, none);
+            user-select: none;
+            pointer-events: none;
+        }
+        .profile-card:hover .profile-avatar {
+            border-color: #EBECEC;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55);
+            transform: translateY(-6px);
+        }
+        .profile-card .profile-name {
+            color: #6d6d6d;
+            font-weight: 600;
+            text-align: center;
+            font-size: 14px;
+            transition: color 0.3s ease;
+        }
+        .profile-card:hover .profile-name { color: #EBECEC; }
+        .profile-card.add-card .profile-avatar {
+            background: #1f1f1f;
+            color: #EBECEC;
+            border: 2px dashed #2e2e2e;
+        }
+        .profile-card.add-card:hover .profile-avatar { border-color: #EBECEC; }
+        .profile-card .add-avatar { font-size: 42px; font-weight: 700; line-height: 1; }
+        .profile-card .delete-btn {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            width: 24px;
+            height: 24px;
+            background: #ef4444;
+            border: 2px solid var(--bg-primary);
+            border-radius: 50%;
+            color: #fff;
+            font-size: 14px;
+            cursor: pointer;
+            opacity: 0;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .profile-card:hover .delete-btn { opacity: 1; }
+        .profile-card .delete-btn:hover { background: #dc2626; transform: scale(1.1); }
+    </style>
+</head>
+<body>
+    <div class="profile-gate" id="profileGate">
+        <div class="profile-gate-panel">
+            <div id="authSection">
+                <h1 id="authTitle">Sign In</h1>
+                <p class="profile-subtext" id="authSubtext">Sign in to access your profiles.</p>
+                <div class="auth-tabs" id="authTabs">
+                    <button type="button" id="loginTab" class="active">Sign In</button>
+                    <button type="button" id="registerTab">Create Account</button>
+                </div>
+                <div class="auth-form active" id="authForm">
+                    <input type="email" id="authEmail" placeholder="Email" autocomplete="email">
+                    <input type="password" id="authPassword" placeholder="Password" autocomplete="current-password">
+                    <button type="button" id="authSubmit">Sign In</button>
+                    <div class="auth-error" id="authError"></div>
+                </div>
+            </div>
+            <div id="profileSection" style="display:none;">
+                <h1>Who's watching?</h1>
+                <div class="logged-in-info">Signed in as <span class="email" id="userEmail"></span></div>
+                <p class="profile-subtext">Select or create a profile (max 5).</p>
+                <div class="profile-grid" id="profileGrid"></div>
+                <div class="profile-gate-actions">
+                    <button class="btn-secondary btn-sm" id="logoutBtn" type="button">Sign Out</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <header class="header">
+        <div class="header-inner">
+            <input type="text" id="searchInput" class="search-input" placeholder="Search movies or TV shows...">
+            <div class="header-actions">
+                <button class="profile-btn" id="activeProfileBadge" type="button">
+                    <img class="profile-icon" id="profileIcon" src="assets/profile-smile.png" alt="">
+                    <span class="profile-name" id="profileName">Profile</span>
+                    <svg class="external-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                </button>
+                <button class="logout-btn" id="headerLogoutBtn" type="button">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                    <span>Log Out</span>
+                </button>
+            </div>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="recent-section" id="recentSection">
+            <h2 class="section-title">Continue Watching</h2>
+            <div class="recent-items" id="recentItems"></div>
+        </div>
+        
+        <div class="now-playing-header" id="nowPlayingHeader" style="display:none;">
+            <div class="now-playing-info">
+                <span class="badge">Now Playing</span>
+                <span class="title-text" id="nowPlayingTitle"></span>
+            </div>
+            <div class="episode-nav" id="episodeNav">
+                <button class="nav-btn" id="prevSeasonBtn" title="Previous Season">&laquo;</button>
+                <button class="nav-btn" id="prevEpisodeBtn" title="Previous Episode">&lsaquo;</button>
+                <select class="nav-select" id="seasonSelect"></select>
+                <select class="nav-select" id="episodeSelect"></select>
+                <button class="nav-btn" id="nextEpisodeBtn" title="Next Episode">&rsaquo;</button>
+                <button class="nav-btn" id="nextSeasonBtn" title="Next Season">&raquo;</button>
+            </div>
+        </div>
+        
+        <div class="player-container" id="playerContainer">
+            <div class="video-wrapper">
+                <div id="controlsGlow"></div>
+                <video id="videoPlayer" controls playsinline></video>
+                <div id="subtitleOverlay">
+                    <span id="subtitleText"></span>
+                </div>
+            </div>
+            
+            <div class="player-controls-area">
+                <div class="subtitle-controls" id="subtitleControls">
+                    <span>Subtitle sync</span>
+                    <input type="range" id="subtitleOffset" min="-3000" max="3000" step="100" value="0">
+                    <span class="value" id="subtitleOffsetLabel">0 ms</span>
+                </div>
+                <div class="subtitle-language" id="subtitleLanguageControl">
+                    <span>Subtitle language</span>
+                    <select id="subtitleLanguageSelect"><option value="">Loading...</option></select>
+                </div>
+            </div>
+            <div id="m3u8Link"></div>
+        </div>
+        
+        <div id="status"></div>
+        
+        <div class="results" id="results"></div>
+    </div>
+
+    <script>
+        const TMDB_IMG = 'https://image.tmdb.org/t/p/w300';
+        let selectedItem = null;
+        let tvData = null;
+        let currentWatchKey = null;
+        let currentSeason = null;
+        let currentEpisode = null;
+        let currentEpisodesList = [];
+        let hls = null;
+        let subtitleTrack = null;
+        let subtitleTrackUrl = null;
+        let subtitleOffsetMs = 0;
+        let subtitleCueBases = [];
+        let availableSubtitles = [];
+        let selectedSubtitleLanguage = 'en';
+        const subtitleControls = document.getElementById('subtitleControls');
+        const subtitleOffsetInput = document.getElementById('subtitleOffset');
+        const subtitleOffsetLabel = document.getElementById('subtitleOffsetLabel');
+        const subtitleLanguageControl = document.getElementById('subtitleLanguageControl');
+        const subtitleLanguageSelect = document.getElementById('subtitleLanguageSelect');
+
+        // Profile gate and auth
+        const profileGate = document.getElementById('profileGate');
+        const profileGrid = document.getElementById('profileGrid');
+        const activeProfileBadge = document.getElementById('activeProfileBadge');
+        const authSection = document.getElementById('authSection');
+        const profileSection = document.getElementById('profileSection');
+        const authForm = document.getElementById('authForm');
+        const authEmail = document.getElementById('authEmail');
+        const authPassword = document.getElementById('authPassword');
+        const authSubmit = document.getElementById('authSubmit');
+        const authError = document.getElementById('authError');
+        const authTitle = document.getElementById('authTitle');
+        const authSubtext = document.getElementById('authSubtext');
+        const loginTab = document.getElementById('loginTab');
+        const registerTab = document.getElementById('registerTab');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const userEmailEl = document.getElementById('userEmail');
+        const profileIconPath = 'assets/profile-smile.png';
+        const profileColors = ['#0d7e80', '#d15219', '#86a546', '#3b3b3b', '#3b82f6', '#ef4444', '#f59e0b', '#0ea5e9'];
+        const profileFilters = {
+            '#0d7e80': 'hue-rotate(-40deg) saturate(1.25) brightness(1.05)',
+            '#d15219': 'hue-rotate(-175deg) saturate(1.35) brightness(1.05)',
+            '#86a546': 'hue-rotate(-120deg) saturate(1.2) brightness(1.05)',
+            '#3b3b3b': 'saturate(0) brightness(0.55)',
+            '#3b82f6': 'none',
+            '#ef4444': 'hue-rotate(-150deg) saturate(1.3) brightness(1.05)',
+            '#f59e0b': 'hue-rotate(-95deg) saturate(1.25) brightness(1.05)',
+            '#0ea5e9': 'hue-rotate(-30deg) saturate(1.1) brightness(1.05)'
+        };
+        const MAX_PROFILES = 5;
+        let profiles = [];
+        let activeProfileId = null;
+        let authToken = localStorage.getItem('vf_authToken');
+        let userEmail = localStorage.getItem('vf_userEmail');
+        let dataPushTimer = null;
+        let isRegistering = false;
+        
+        // Episode navigation elements
+        const episodeNav = document.getElementById('episodeNav');
+        const prevEpisodeBtn = document.getElementById('prevEpisodeBtn');
+        const nextEpisodeBtn = document.getElementById('nextEpisodeBtn');
+        const prevSeasonBtn = document.getElementById('prevSeasonBtn');
+        const nextSeasonBtn = document.getElementById('nextSeasonBtn');
+        const seasonSelect = document.getElementById('seasonSelect');
+        const episodeSelect = document.getElementById('episodeSelect');
+        const nowPlayingTitle = document.getElementById('nowPlayingTitle');
+
+        // Cookie helpers
+        function setCookie(name, value, days = 365) {
+            const expires = new Date(Date.now() + days * 864e5).toUTCString();
+            document.cookie = `${name}=${encodeURIComponent(JSON.stringify(value))}; expires=${expires}; path=/`;
+        }
+        function getCookie(name) {
+            const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+            if (match) {
+                try { return JSON.parse(decodeURIComponent(match[2])); } catch { return []; }
+            }
+            return [];
+        }
+
+        function normalizeColor(color) {
+            return (color || '').toString().toLowerCase();
+        }
+
+        function colorToFilter(color) {
+            const key = normalizeColor(color);
+            return profileFilters[key] || 'none';
+        }
+
+        function loadProfilesFromStorage() {
+            try {
+                profiles = JSON.parse(localStorage.getItem('vf_profiles') || '[]').map(p => ({
+                    ...p,
+                    color: normalizeColor(p.color)
+                }));
+            } catch (e) {
+                profiles = [];
+            }
+            activeProfileId = localStorage.getItem('vf_activeProfile');
+        }
+
+        function persistProfiles() {
+            localStorage.setItem('vf_profiles', JSON.stringify(profiles));
+            scheduleDataPush();
+        }
+        
+        function getAuthToken() {
+            if (!authToken) authToken = localStorage.getItem('vf_authToken');
+            return authToken;
+        }
+        
+        function setAuthToken(token, email) {
+            authToken = token;
+            userEmail = email;
+            if (token) {
+                localStorage.setItem('vf_authToken', token);
+                localStorage.setItem('vf_userEmail', email);
+            } else {
+                localStorage.removeItem('vf_authToken');
+                localStorage.removeItem('vf_userEmail');
+            }
+            updateAuthUI();
+        }
+        
+        function updateAuthUI() {
+            const token = getAuthToken();
+            if (token && userEmail) {
+                authSection.style.display = 'none';
+                profileSection.style.display = 'block';
+                userEmailEl.textContent = userEmail;
+            } else {
+                authSection.style.display = 'block';
+                profileSection.style.display = 'none';
+            }
+        }
+        
+        function setAuthMode(registering) {
+            isRegistering = registering;
+            loginTab.classList.toggle('active', !registering);
+            registerTab.classList.toggle('active', registering);
+            authTitle.textContent = registering ? 'Create Account' : 'Sign In';
+            authSubtext.textContent = registering ? 'Create an account to save your profiles.' : 'Sign in to access your profiles.';
+            authSubmit.textContent = registering ? 'Create Account' : 'Sign In';
+            authPassword.autocomplete = registering ? 'new-password' : 'current-password';
+            authError.textContent = '';
+        }
+        
+        loginTab?.addEventListener('click', () => setAuthMode(false));
+        registerTab?.addEventListener('click', () => setAuthMode(true));
+        
+        authSubmit?.addEventListener('click', handleAuth);
+        authPassword?.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleAuth(); });
+        
+        async function handleAuth() {
+            const email = authEmail.value.trim();
+            const password = authPassword.value;
+            authError.textContent = '';
+            
+            if (!email || !password) {
+                authError.textContent = 'Email and password required';
+                return;
+            }
+            
+            const endpoint = isRegistering ? '/api/auth/register' : '/api/auth/login';
+            authSubmit.disabled = true;
+            authSubmit.textContent = isRegistering ? 'Creating...' : 'Signing in...';
+            
+            try {
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await res.json();
+                
+                if (!res.ok) {
+                    authError.textContent = data.error || 'Authentication failed';
+                    return;
+                }
+                
+                setAuthToken(data.token, data.email);
+                importUserData(data.data);
+                loadProfilesFromStorage();
+                renderProfiles();
+                updateActiveProfileBadge();
+                refreshProfileGateVisibility();
+                displayRecent();
+                authEmail.value = '';
+                authPassword.value = '';
+            } catch (e) {
+                authError.textContent = 'Connection failed. Is the server running?';
+            } finally {
+                authSubmit.disabled = false;
+                authSubmit.textContent = isRegistering ? 'Create Account' : 'Sign In';
+            }
+        }
+        
+        async function logout() {
+            const token = getAuthToken();
+            if (token) {
+                try {
+                    await fetch('/api/auth/logout', {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                } catch (e) {}
+            }
+            setAuthToken(null, null);
+            profiles = [];
+            activeProfileId = null;
+            localStorage.removeItem('vf_profiles');
+            localStorage.removeItem('vf_activeProfile');
+            for (const key of Object.keys(localStorage)) {
+                if (key.startsWith('vf_recentWatched_')) localStorage.removeItem(key);
+            }
+            renderProfiles();
+            updateActiveProfileBadge();
+            profileGate?.classList.remove('hidden');
+            displayRecent();
+        }
+        
+        logoutBtn?.addEventListener('click', logout);
+
+        function getActiveProfile() {
+            return profiles.find(p => p.id === activeProfileId);
+        }
+
+        function refreshProfileGateVisibility() {
+            if (getActiveProfile()) {
+                profileGate?.classList.add('hidden');
+            } else {
+                profileGate?.classList.remove('hidden');
+            }
+        }
+
+        function renderProfiles() {
+            if (!profileGrid) return;
+            profileGrid.innerHTML = '';
+            profiles.forEach(profile => {
+                const card = document.createElement('button');
+                card.className = 'profile-card';
+                card.type = 'button';
+                const filter = colorToFilter(profile.color);
+                const color = normalizeColor(profile.color) || '#3b82f6';
+                card.innerHTML = `
+                    <div class="delete-btn" data-id="${profile.id}">&times;</div>
+                    <div class="profile-avatar" style="--profile-color:${color};--profile-filter:${filter};">
+                        <img src="${profileIconPath}" alt="Profile icon">
+                    </div>
+                    <div class="profile-name">${profile.name}</div>
+                `;
+                card.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('delete-btn')) return;
+                    setActiveProfile(profile.id);
+                });
+                card.querySelector('.delete-btn').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    deleteProfile(profile.id);
+                });
+                profileGrid.appendChild(card);
+            });
+
+            if (profiles.length < MAX_PROFILES) {
+                const addCard = document.createElement('button');
+                addCard.className = 'profile-card add-card';
+                addCard.type = 'button';
+                addCard.innerHTML = `
+                    <div class="profile-avatar"><div class="add-avatar">+</div></div>
+                    <div class="profile-name">Add Profile</div>
+                `;
+                addCard.addEventListener('click', promptNewProfile);
+                profileGrid.appendChild(addCard);
+            }
+        }
+
+        function updateActiveProfileBadge() {
+            if (!activeProfileBadge) return;
+            const profileIconEl = document.getElementById('profileIcon');
+            const profileNameEl = document.getElementById('profileName');
+            const active = getActiveProfile();
+            if (!active) {
+                if (profileIconEl) profileIconEl.style.filter = '';
+                if (profileNameEl) profileNameEl.textContent = 'Profile';
+            } else {
+                const filter = profileFilters[active.color] || '';
+                if (profileIconEl) profileIconEl.style.filter = filter;
+                if (profileNameEl) profileNameEl.textContent = active.name;
+            }
+        }
+
+        function openProfileGate() {
+            profileGate?.classList.remove('hidden');
+        }
+
+        function setActiveProfile(profileId) {
+            activeProfileId = profileId;
+            if (profileId) {
+                localStorage.setItem('vf_activeProfile', profileId);
+            } else {
+                localStorage.removeItem('vf_activeProfile');
+            }
+            updateActiveProfileBadge();
+            refreshProfileGateVisibility();
+            displayRecent();
+        }
+
+        function promptNewProfile() {
+            if (profiles.length >= MAX_PROFILES) {
+                alert(`Maximum ${MAX_PROFILES} profiles allowed per account.`);
+                return;
+            }
+            let name = prompt('Profile name?');
+            if (!name) return;
+            name = name.trim();
+            if (!name) return;
+            const id = `p_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+            const color = normalizeColor(profileColors[profiles.length % profileColors.length]);
+            profiles.push({ id, name: name.slice(0, 24), color });
+            persistProfiles();
+            renderProfiles();
+            setActiveProfile(id);
+        }
+
+        function deleteProfile(profileId) {
+            const profile = profiles.find(p => p.id === profileId);
+            if (!profile) return;
+            if (!confirm(`Delete profile "${profile.name}"? This will also delete its watch history.`)) return;
+            profiles = profiles.filter(p => p.id !== profileId);
+            localStorage.removeItem(`vf_recentWatched_${profileId}`);
+            if (activeProfileId === profileId) {
+                activeProfileId = null;
+                localStorage.removeItem('vf_activeProfile');
+            }
+            persistProfiles();
+            renderProfiles();
+            updateActiveProfileBadge();
+            refreshProfileGateVisibility();
+            displayRecent();
+        }
+
+        function initProfiles() {
+            userEmail = localStorage.getItem('vf_userEmail');
+            loadProfilesFromStorage();
+            renderProfiles();
+            const active = getActiveProfile();
+            if (!active) {
+                activeProfileId = null;
+                localStorage.removeItem('vf_activeProfile');
+            }
+            updateAuthUI();
+            updateActiveProfileBadge();
+            refreshProfileGateVisibility();
+            displayRecent();
+            initAuth();
+        }
+
+        activeProfileBadge?.addEventListener('click', openProfileGate);
+
+        function getRecentStorageKey() {
+            if (!activeProfileId) return null;
+            return `vf_recentWatched_${activeProfileId}`;
+        }
+
+        function getRecentList() {
+            const key = getRecentStorageKey();
+            if (!key) return [];
+            try {
+                const raw = localStorage.getItem(key);
+                return raw ? JSON.parse(raw) : [];
+            } catch {
+                return [];
+            }
+        }
+
+        function setRecentList(list) {
+            const key = getRecentStorageKey();
+            if (!key) return;
+            localStorage.setItem(key, JSON.stringify(list || []));
+            scheduleDataPush();
+        }
+
+        function exportUserData() {
+            const data = { profiles: profiles || [], recents: {} };
+            for (const p of profiles || []) {
+                if (!p?.id) continue;
+                try {
+                    data.recents[p.id] = JSON.parse(localStorage.getItem(`vf_recentWatched_${p.id}`) || '[]');
+                } catch {
+                    data.recents[p.id] = [];
+                }
+            }
+            return data;
+        }
+
+        function importUserData(data) {
+            if (!data || typeof data !== 'object') return;
+            if (Array.isArray(data.profiles)) {
+                localStorage.setItem('vf_profiles', JSON.stringify(data.profiles));
+            }
+            if (data.recents && typeof data.recents === 'object') {
+                for (const [profileId, list] of Object.entries(data.recents)) {
+                    localStorage.setItem(`vf_recentWatched_${profileId}`, JSON.stringify(Array.isArray(list) ? list : []));
+                }
+            }
+        }
+
+        async function dataPull() {
+            const token = getAuthToken();
+            if (!token) return;
+            try {
+                const res = await fetch('/api/user/data', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) {
+                    if (res.status === 401) {
+                        setAuthToken(null, null);
+                    }
+                    return;
+                }
+                const data = await res.json();
+                importUserData(data);
+            } catch (e) {}
+        }
+
+        async function dataPush() {
+            const token = getAuthToken();
+            if (!token) return;
+            try {
+                await fetch('/api/user/data', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ data: exportUserData() })
+                });
+            } catch (e) {}
+        }
+
+        function scheduleDataPush() {
+            if (!getAuthToken()) return;
+            if (dataPushTimer) clearTimeout(dataPushTimer);
+            dataPushTimer = setTimeout(() => {
+                dataPushTimer = null;
+                dataPush();
+            }, 600);
+        }
+
+        async function initAuth() {
+            const token = getAuthToken();
+            if (token) {
+                try {
+                    const res = await fetch('/api/auth/verify', {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        userEmail = data.email;
+                        localStorage.setItem('vf_userEmail', data.email);
+                        importUserData(data.data);
+                        loadProfilesFromStorage();
+                        renderProfiles();
+                        updateAuthUI();
+                        updateActiveProfileBadge();
+                        refreshProfileGateVisibility();
+                        displayRecent();
+                    } else {
+                        setAuthToken(null, null);
+                    }
+                } catch (e) {
+                    // Server unavailable - use local data if we have credentials
+                    if (userEmail) {
+                        loadProfilesFromStorage();
+                        renderProfiles();
+                        updateAuthUI();
+                        updateActiveProfileBadge();
+                        refreshProfileGateVisibility();
+                        displayRecent();
+                    }
+                }
+            }
+        }
+
+        function normalizeLang(lang) {
+            if (!lang) return '';
+            return String(lang).toLowerCase().split(/[-_]/)[0];
+        }
+
+        function cleanupSubtitleTrack() {
+            if (subtitleTrack) {
+                subtitleTrack.remove();
+                subtitleTrack = null;
+            }
+            if (subtitleTrackUrl) {
+                URL.revokeObjectURL(subtitleTrackUrl);
+                subtitleTrackUrl = null;
+            }
+            subtitleCueBases = [];
+            subtitleControls?.classList.remove('active');
+            subtitleLanguageControl?.classList.remove('active');
+            availableSubtitles = [];
+            if (subtitleLanguageSelect) subtitleLanguageSelect.innerHTML = '<option value="">No subtitles</option>';
+        }
+
+        function syncFullscreenSubtitleState() {
+            if (subtitleTrack?.track) {
+                subtitleTrack.track.mode = 'showing';
+            }
+        }
+
+        function updateSubtitleOffsetLabel() {
+            if (subtitleOffsetLabel) {
+                subtitleOffsetLabel.textContent = `${subtitleOffsetMs} ms`;
+            }
+        }
+
+        function captureSubtitleCueBases() {
+            subtitleCueBases = [];
+            const cues = subtitleTrack?.track?.cues;
+            if (!cues) return;
+            for (let i = 0; i < cues.length; i++) {
+                const cue = cues[i];
+                subtitleCueBases.push({ cue, start: cue.startTime, end: cue.endTime });
+            }
+        }
+
+        function applySubtitleOffset(ms = subtitleOffsetMs) {
+            if (!subtitleCueBases.length) return;
+            const shift = ms / 1000;
+            for (const base of subtitleCueBases) {
+                base.cue.startTime = Math.max(0, base.start + shift);
+                base.cue.endTime = Math.max(base.cue.startTime, base.end + shift);
+            }
+        }
+
+        function updateSubtitleLanguageOptions(subtitles, activeLang) {
+            if (!subtitleLanguageSelect) return;
+            subtitleLanguageSelect.innerHTML = '';
+            const seen = new Set();
+            subtitles.forEach(sub => {
+                const code = normalizeLang(sub.language || sub.lang || sub.srclang) || 'und';
+                if (seen.has(code)) return;
+                seen.add(code);
+                const option = document.createElement('option');
+                option.value = code;
+                option.textContent = sub.label || sub.language || sub.lang || code.toUpperCase();
+                subtitleLanguageSelect.appendChild(option);
+            });
+            if (seen.size > 0) {
+                const fallback = seen.has('en') ? 'en' : subtitleLanguageSelect.options[0].value;
+                const target = (activeLang && seen.has(activeLang)) ? activeLang : fallback;
+                subtitleLanguageSelect.value = target;
+                selectedSubtitleLanguage = subtitleLanguageSelect.value;
+                subtitleLanguageControl?.classList.add('active');
+            } else {
+                subtitleLanguageControl?.classList.remove('active');
+            }
+        }
+
+        function handleSubtitleTrackLoad() {
+            captureSubtitleCueBases();
+            applySubtitleOffset();
+            syncFullscreenSubtitleState();
+        }
+
+        subtitleOffsetInput?.addEventListener('input', () => {
+            subtitleOffsetMs = Number(subtitleOffsetInput.value || 0);
+            updateSubtitleOffsetLabel();
+            applySubtitleOffset();
+        });
+        updateSubtitleOffsetLabel();
+
+        subtitleLanguageSelect?.addEventListener('change', () => {
+            const lang = subtitleLanguageSelect.value;
+            selectedSubtitleLanguage = lang;
+            loadSubtitles(currentSeason, currentEpisode, lang);
+        });
+
+        document.addEventListener('fullscreenchange', syncFullscreenSubtitleState);
+
+        // Load subtitles
+        async function loadSubtitles(season = null, episode = null, preferredLanguage = null) {
+            if (!selectedItem) return;
+            cleanupSubtitleTrack();
+            
+            try {
+                const qs = new URLSearchParams();
+                if (selectedItem.media_type === 'tv' && season && episode) {
+                    qs.set('season', season);
+                    qs.set('episode', episode);
+                }
+                const res = await fetch(`/api/subtitles/${selectedItem.id}${qs.toString() ? '?' + qs.toString() : ''}`);
+                const subtitles = await res.json();
+                availableSubtitles = subtitles || [];
+                
+                if (!availableSubtitles.length) {
+                    subtitleControls?.classList.remove('active');
+                    subtitleLanguageControl?.classList.remove('active');
+                    return;
+                }
+
+                const desiredLang = normalizeLang(preferredLanguage || subtitleLanguageSelect?.value || selectedSubtitleLanguage);
+                const selectedSub = availableSubtitles.find(s => normalizeLang(s.language || s.lang || s.srclang) === desiredLang)
+                    || availableSubtitles.find(s => normalizeLang(s.language || s.lang || s.srclang) === 'en')
+                    || availableSubtitles[0];
+                selectedSubtitleLanguage = normalizeLang(selectedSub.language || selectedSub.lang || selectedSub.srclang) || desiredLang;
+                updateSubtitleLanguageOptions(availableSubtitles, selectedSubtitleLanguage);
+                
+                const vttUrl = `/api/subtitle-vtt?url=${encodeURIComponent(selectedSub.url)}`;
+                const vttRes = await fetch(vttUrl);
+                const vttText = await vttRes.text();
+                const video = document.getElementById('videoPlayer');
+                subtitleTrackUrl = URL.createObjectURL(new Blob([vttText], { type: 'text/vtt' }));
+                subtitleTrack = document.createElement('track');
+                subtitleTrack.kind = 'subtitles';
+                subtitleTrack.label = selectedSub.label || selectedSub.language || selectedSub.lang || 'Subtitles';
+                subtitleTrack.srclang = selectedSubtitleLanguage || 'und';
+                subtitleTrack.src = subtitleTrackUrl;
+                subtitleTrack.default = true;
+                subtitleTrack.addEventListener('load', handleSubtitleTrackLoad, { once: true });
+                video.appendChild(subtitleTrack);
+                subtitleControls?.classList.add('active');
+                subtitleLanguageControl?.classList.add('active');
+                subtitleLanguageSelect.value = selectedSubtitleLanguage;
+                handleSubtitleTrackLoad();
+            } catch (e) {
+                console.error('Failed to load subtitles:', e);
+                subtitleControls?.classList.remove('active');
+                subtitleLanguageControl?.classList.remove('active');
+            }
+        }
+
+        // Recently watched
+        function getWatchKey(item, season, episode) {
+            return `${item.id}-${season || 'movie'}-${episode || ''}`;
+        }
+        function addToRecent(item, season = null, episode = null) {
+            let recent = getRecentList();
+            currentWatchKey = getWatchKey(item, season, episode);
+            const entry = {
+                id: item.id, title: item.title || item.name, poster: item.poster_path,
+                type: item.media_type, season, episode, timestamp: Date.now(), videoTime: 0
+            };
+            recent = recent.filter(r => !(r.id === entry.id && r.season === season && r.episode === episode));
+            recent.unshift(entry);
+            recent = recent.slice(0, 20);
+            setRecentList(recent);
+            displayRecent();
+        }
+        function updateVideoTime(time) {
+            if (!currentWatchKey) return;
+            let recent = getRecentList();
+            const idx = recent.findIndex(r => getWatchKey(r, r.season, r.episode) === currentWatchKey);
+            if (idx !== -1) {
+                recent[idx].videoTime = Math.floor(time);
+                setRecentList(recent);
+            }
+        }
+        function formatTime(seconds) {
+            if (!seconds) return '';
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            const s = Math.floor(seconds % 60);
+            if (h > 0) return `${h}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+            return `${m}:${s.toString().padStart(2,'0')}`;
+        }
+        function displayRecent() {
+            const recent = getRecentList();
+            const section = document.getElementById('recentSection');
+            const container = document.getElementById('recentItems');
+            if (!activeProfileId) {
+                section.classList.remove('active');
+                container.innerHTML = '';
+                return;
+            }
+            if (recent.length === 0) { section.classList.remove('active'); return; }
+            section.classList.add('active');
+            container.innerHTML = '';
+            recent.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'recent-item';
+                const timeStr = item.videoTime ? formatTime(item.videoTime) : '';
+                const progressPercent = item.videoTime && item.duration ? Math.min(100, (item.videoTime / item.duration) * 100) : 0;
+                div.innerHTML = `
+                    <div class="remove-btn" data-index="${index}">&times;</div>
+                    <div class="poster-wrap">
+                        ${item.poster ? `<img src="${TMDB_IMG}${item.poster}" alt="">` : '<div class="no-poster">No Image</div>'}
+                        ${progressPercent > 0 ? `<div class="progress-bar"><span style="width:${progressPercent}%"></span></div>` : ''}
+                    </div>
+                    <div class="info">
+                        <div class="title">${item.title}</div>
+                        ${item.type === 'tv' ? `<div class="ep">S${item.season} E${item.episode}</div>` : ''}
+                        ${timeStr ? `<div class="resume"><svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>${timeStr}</div>` : ''}
+                    </div>
+                `;
+                div.querySelector('.remove-btn').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    removeFromRecent(index);
+                });
+                div.onclick = (e) => {
+                    if (e.target.classList.contains('remove-btn')) return;
+                    playRecent(item);
+                };
+                container.appendChild(div);
+            });
+        }
+        
+        function removeFromRecent(index) {
+            let recent = getRecentList();
+            recent.splice(index, 1);
+            setRecentList(recent);
+            displayRecent();
+        }
+        async function playRecent(item) {
+            if (!activeProfileId) {
+                openProfileGate();
+                return;
+            }
+            selectedItem = { id: item.id, media_type: item.type, title: item.title, poster_path: item.poster };
+            const resumeTime = item.videoTime || 0;
+            if (item.type === 'movie') {
+                play(null, null, resumeTime);
+            } else {
+                // Load TV data and play
+                try {
+                    const res = await fetch(`/api/tv/${item.id}`);
+                    tvData = await res.json();
+                    const data = await fetchSeasonData(item.season);
+                    currentEpisodesList = data.episodes || [];
+                } catch (e) { console.error(e); }
+                play(item.season, item.episode, resumeTime);
+            }
+        }
+
+        // Event listeners
+        document.getElementById('searchInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') search(); });
+        document.getElementById('headerLogoutBtn')?.addEventListener('click', logout);
+        
+        // Episode navigation events
+        prevSeasonBtn?.addEventListener('click', playPreviousSeason);
+        nextSeasonBtn?.addEventListener('click', playNextSeason);
+        prevEpisodeBtn?.addEventListener('click', playPreviousEpisode);
+        nextEpisodeBtn?.addEventListener('click', playNextEpisode);
+        
+        // Season/episode dropdown events
+        seasonSelect?.addEventListener('change', async () => {
+            const season = parseInt(seasonSelect.value);
+            if (!season || !selectedItem) return;
+            const data = await fetchSeasonData(season);
+            currentEpisodesList = data.episodes || [];
+            if (currentEpisodesList.length > 0) {
+                play(season, currentEpisodesList[0].episode_number);
+            }
+        });
+        episodeSelect?.addEventListener('change', () => {
+            const episode = parseInt(episodeSelect.value);
+            if (!episode || !currentSeason) return;
+            play(currentSeason, episode);
+        });
+        
+        initProfiles();
+        displayRecent();
+
+        async function search() {
+            const query = document.getElementById('searchInput').value.trim();
+            if (!query) return;
+            document.getElementById('results').innerHTML = '<div class="empty-state"><span class="loading"><span class="spinner"></span>Searching...</span></div>';
+            document.getElementById('playerContainer').classList.remove('active');
+            document.getElementById('status').classList.remove('active');
+            document.getElementById('nowPlayingHeader').style.display = 'none';
+            try {
+                const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+                const results = await res.json();
+                displayResults(results);
+            } catch (e) {
+                document.getElementById('results').innerHTML = '<div class="empty-state"><p class="error">Search failed</p></div>';
+            }
+        }
+
+        function displayResults(results) {
+            const container = document.getElementById('results');
+            container.innerHTML = '';
+            const filtered = results.filter(r => r.media_type === 'movie' || r.media_type === 'tv');
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="empty-state">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
+                    <p>No results found</p>
+                </div>`;
+                return;
+            }
+            filtered.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'result-item';
+                div.innerHTML = `
+                    <div class="poster-wrap">
+                        ${item.poster_path ? `<img src="${TMDB_IMG}${item.poster_path}" alt="">` : '<div class="no-poster">No Image</div>'}
+                        <span class="type">${item.media_type === 'movie' ? 'Movie' : 'TV'}</span>
+                    </div>
+                    <div class="info">
+                        <div class="title">${item.title || item.name}</div>
+                        <div class="meta">
+                            <span>${(item.release_date || item.first_air_date || '').slice(0, 4)}</span>
+                        </div>
+                    </div>
+                `;
+                div.onclick = () => selectItem(item);
+                container.appendChild(div);
+            });
+        }
+
+        async function selectItem(item) {
+            selectedItem = item;
+            if (item.media_type === 'movie') {
+                play();
+            } else {
+                // Load TV data and play first episode
+                try {
+                    const res = await fetch(`/api/tv/${item.id}`);
+                    tvData = await res.json();
+                    const seasons = tvData.seasons.filter(s => s.season_number > 0);
+                    if (seasons.length > 0) {
+                        const firstSeason = seasons[0].season_number;
+                        const data = await fetchSeasonData(firstSeason);
+                        currentEpisodesList = data.episodes || [];
+                        if (currentEpisodesList.length > 0) {
+                            play(firstSeason, currentEpisodesList[0].episode_number);
+                        }
+                    }
+                } catch (e) { console.error(e); }
+            }
+        }
+
+
+        async function fetchSeasonData(season) {
+            const res = await fetch(`/api/tv/${selectedItem.id}/season/${season}`);
+            return await res.json();
+        }
+
+        function getSeasonNumbers() {
+            if (!tvData?.seasons) return [];
+            return tvData.seasons.filter(s => s.season_number > 0).map(s => s.season_number).sort((a, b) => a - b);
+        }
+
+        function updateEpisodeNavButtons() {
+            const seasons = getSeasonNumbers();
+            const currentSeasonVal = parseInt(currentSeason || 0);
+            const currentIndex = seasons.indexOf(currentSeasonVal);
+            
+            if (prevSeasonBtn) prevSeasonBtn.disabled = currentIndex <= 0;
+            if (nextSeasonBtn) nextSeasonBtn.disabled = currentIndex === -1 || currentIndex >= seasons.length - 1;
+            
+            const currentEpVal = parseInt(currentEpisode || 0);
+            const epIndex = currentEpisodesList.findIndex(e => e.episode_number === currentEpVal);
+            
+            if (prevEpisodeBtn) prevEpisodeBtn.disabled = epIndex <= 0 && currentIndex <= 0;
+            if (nextEpisodeBtn) nextEpisodeBtn.disabled = epIndex >= currentEpisodesList.length - 1 && currentIndex >= seasons.length - 1;
+        }
+
+        function updateNowPlaying(season, episode) {
+            const header = document.getElementById('nowPlayingHeader');
+            nowPlayingTitle.textContent = selectedItem?.title || selectedItem?.name || '';
+            
+            // Show header when we have something to play
+            if (selectedItem) {
+                if (header) header.style.display = 'flex';
+            } else {
+                if (header) header.style.display = 'none';
+            }
+            
+            if (selectedItem?.media_type === 'tv' && season && episode) {
+                episodeNav?.classList.add('active');
+                // Populate season dropdown
+                if (seasonSelect && tvData?.seasons) {
+                    const seasons = getSeasonNumbers();
+                    seasonSelect.innerHTML = seasons.map(s => 
+                        `<option value="${s}"${s == season ? ' selected' : ''}>Season ${s}</option>`
+                    ).join('');
+                }
+                // Populate episode dropdown
+                if (episodeSelect && currentEpisodesList.length) {
+                    episodeSelect.innerHTML = currentEpisodesList.map(e => 
+                        `<option value="${e.episode_number}"${e.episode_number == episode ? ' selected' : ''}>Episode ${e.episode_number}</option>`
+                    ).join('');
+                }
+            } else {
+                episodeNav?.classList.remove('active');
+            }
+        }
+
+
+
+        async function playPreviousSeason() {
+            if (!selectedItem || selectedItem.media_type !== 'tv') return;
+            const seasons = getSeasonNumbers();
+            const current = parseInt(currentSeason);
+            const idx = seasons.indexOf(current);
+            if (idx > 0) {
+                const targetSeason = seasons[idx - 1];
+                const data = await fetchSeasonData(targetSeason);
+                const episodes = data.episodes || [];
+                if (!episodes.length) return;
+                currentEpisodesList = episodes;
+                play(targetSeason, episodes[episodes.length - 1].episode_number);
+            }
+        }
+
+        async function playNextSeason() {
+            if (!selectedItem || selectedItem.media_type !== 'tv') return;
+            const seasons = getSeasonNumbers();
+            const current = parseInt(currentSeason);
+            const idx = seasons.indexOf(current);
+            if (idx !== -1 && idx < seasons.length - 1) {
+                const targetSeason = seasons[idx + 1];
+                const data = await fetchSeasonData(targetSeason);
+                const episodes = data.episodes || [];
+                if (!episodes.length) return;
+                currentEpisodesList = episodes;
+                play(targetSeason, episodes[0].episode_number);
+            }
+        }
+
+        async function playPreviousEpisode() {
+            if (!currentSeason || !currentEpisode) return;
+            const currIdx = currentEpisodesList.findIndex(e => e.episode_number == currentEpisode);
+            if (currIdx > 0) {
+                play(currentSeason, currentEpisodesList[currIdx - 1].episode_number);
+            } else {
+                const seasons = getSeasonNumbers();
+                const idx = seasons.indexOf(parseInt(currentSeason));
+                if (idx > 0) {
+                    const prevSeason = seasons[idx - 1];
+                    const data = await fetchSeasonData(prevSeason);
+                    if (data.episodes?.length) {
+                        currentEpisodesList = data.episodes;
+                        play(prevSeason, data.episodes[data.episodes.length - 1].episode_number);
+                    }
+                }
+            }
+        }
+
+        async function playNextEpisode() {
+            if (!currentSeason || !currentEpisode) return;
+            const currIdx = currentEpisodesList.findIndex(e => e.episode_number == currentEpisode);
+            if (currIdx < currentEpisodesList.length - 1) {
+                play(currentSeason, currentEpisodesList[currIdx + 1].episode_number);
+            } else {
+                const seasons = getSeasonNumbers();
+                const idx = seasons.indexOf(parseInt(currentSeason));
+                if (idx !== -1 && idx < seasons.length - 1) {
+                    const nextSeason = seasons[idx + 1];
+                    const data = await fetchSeasonData(nextSeason);
+                    if (data.episodes?.length) {
+                        currentEpisodesList = data.episodes;
+                        play(nextSeason, data.episodes[0].episode_number);
+                    }
+                }
+            }
+        }
+
+        async function play(forceSeason = null, forceEpisode = null, resumeTime = 0) {
+            let url, season, episode;
+            if (selectedItem.media_type === 'movie') {
+                url = `https://vidfast.pro/movie/${selectedItem.id}`;
+            } else {
+                season = forceSeason;
+                episode = forceEpisode;
+                if (!season || !episode) return;
+                url = `https://vidfast.pro/tv/${selectedItem.id}/${season}/${episode}`;
+            }
+            
+            // Pause current video before loading next
+            const video = document.getElementById('videoPlayer');
+            if (video && !video.paused) video.pause();
+            
+            cleanupSubtitleTrack();
+            
+            // Show now-playing header immediately
+            currentSeason = season || null;
+            currentEpisode = episode || null;
+            updateNowPlaying(currentSeason, currentEpisode);
+            
+            const statusEl = document.getElementById('status');
+            statusEl.innerHTML = '<span class="loading"><span class="spinner"></span>Extracting stream... (may take 30-60s)</span>';
+            statusEl.className = 'active';
+            document.getElementById('playerContainer').classList.remove('active');
+            
+            try {
+                const res = await fetch('/api/extract', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url })
+                });
+                const data = await res.json();
+                
+                if (data.success && data.m3u8Url) {
+                    addToRecent(selectedItem, currentSeason, currentEpisode);
+                    updateEpisodeNavButtons();
+                    document.getElementById('status').textContent = '';
+                    document.getElementById('status').classList.remove('active');
+                    document.getElementById('m3u8Link').textContent = data.m3u8Url;
+                    document.getElementById('playerContainer').classList.add('active');
+                    
+                    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+                    // Use proxy on mobile to avoid CORS, direct on PC
+                    const streamUrl = isMobile 
+                        ? '/api/proxy?url=' + encodeURIComponent(data.m3u8Url)
+                        : data.m3u8Url;
+                    
+                    // Destroy previous HLS
+                    if (hls) {
+                        hls.destroy();
+                        hls = null;
+                    }
+                    
+                    // Setup HLS with buffering optimizations for slow networks
+                    if (Hls.isSupported()) {
+                        hls = new Hls({
+                            enableWorker: true,
+                            lowLatencyMode: false,
+                            // Buffer settings for smoother playback on slow networks
+                            maxBufferLength: 60,              // Buffer up to 60 seconds ahead
+                            maxMaxBufferLength: 120,          // Allow up to 2 minutes buffer
+                            maxBufferSize: 60 * 1000 * 1000,  // 60MB max buffer size
+                            maxBufferHole: 0.5,               // Tolerate small gaps
+                            // ABR (Adaptive Bitrate) settings
+                            startLevel: -1,                   // Auto-select initial quality
+                            abrEwmaDefaultEstimate: 500000,   // Conservative initial bandwidth estimate (500kbps)
+                            abrBandWidthFactor: 0.9,          // Use 90% of measured bandwidth
+                            abrBandWidthUpFactor: 0.7,        // Be conservative when upgrading quality
+                            abrMaxWithRealBitrate: true,      // Cap quality based on real bitrate
+                            // Fragment loading settings
+                            fragLoadingTimeOut: 30000,        // 30s timeout for fragment loading
+                            fragLoadingMaxRetry: 6,           // Retry failed fragments 6 times
+                            fragLoadingRetryDelay: 1000,      // 1s between retries
+                            fragLoadingMaxRetryTimeout: 64000,// Max 64s retry timeout
+                            // Manifest loading settings
+                            manifestLoadingTimeOut: 30000,    // 30s timeout for manifest
+                            manifestLoadingMaxRetry: 4,       // Retry manifest 4 times
+                            manifestLoadingRetryDelay: 1000,
+                            // Level loading settings
+                            levelLoadingTimeOut: 30000,
+                            levelLoadingMaxRetry: 4,
+                            levelLoadingRetryDelay: 1000,
+                            // Stall recovery
+                            nudgeOffset: 0.1,                 // Small nudge to recover from stalls
+                            nudgeMaxRetry: 5,                 // Max nudge attempts
+                            xhrSetup: (xhr, url) => {
+                                xhr.withCredentials = false;
+                            }
+                        });
+                        hls.loadSource(streamUrl);
+                        hls.attachMedia(video);
+                        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                            if (resumeTime > 0) video.currentTime = resumeTime;
+                            video.play().catch(() => {});
+                        });
+                        hls.on(Hls.Events.ERROR, (event, errData) => {
+                            console.error('HLS error:', errData);
+                            if (errData.fatal) {
+                                const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+                                if (errData.type === 'networkError' && isMobile) {
+                                    document.getElementById('status').innerHTML = 'CORS error on mobile. Try:<br>1. Use Chrome/Firefox instead<br>2. Or watch on PC';
+                                } else {
+                                    document.getElementById('status').textContent = 'Playback error. Try refreshing.';
+                                }
+                                document.getElementById('status').className = 'error';
+                            }
+                        });
+                    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                        // Native HLS support (Safari, iOS)
+                        video.src = streamUrl;
+                        video.addEventListener('loadedmetadata', () => {
+                            if (resumeTime > 0) video.currentTime = resumeTime;
+                            video.play().catch(() => {});
+                        }, { once: true });
+                        video.addEventListener('error', () => {
+                            document.getElementById('status').textContent = 'Playback error. Format may not be supported.';
+                            document.getElementById('status').className = 'error';
+                        }, { once: true });
+                    } else {
+                        document.getElementById('status').textContent = 'HLS not supported on this browser.';
+                        document.getElementById('status').className = 'error';
+                    }
+                    
+                    video.ontimeupdate = () => {
+                        // Save progress every 5 seconds
+                        if (Math.floor(video.currentTime) % 5 === 0) {
+                            updateVideoTime(video.currentTime);
+                        }
+                    };
+                    video.onpause = () => updateVideoTime(video.currentTime);
+                    
+                    // Load subtitles
+                    loadSubtitles(season, episode, selectedSubtitleLanguage);
+                } else {
+                    statusEl.textContent = data.error || 'Failed to extract stream';
+                    statusEl.className = 'active error';
+                }
+            } catch (e) {
+                statusEl.textContent = 'Error: ' + e.message;
+                statusEl.className = 'active error';
+            }
+        }
+    </script>
+</body>
+</html>
